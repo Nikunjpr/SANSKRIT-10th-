@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>संस्कृत क्विज़</title>
     <style>
+        /* CSS कोड में कोई बदलाव नहीं है, यह पहले जैसा ही रहेगा */
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
         body { font-family: 'Poppins', sans-serif; background-color: #f0f2f5; color: #333; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 15px; }
         .quiz-container { background: #ffffff; border-radius: 15px; box-shadow: 0 6px 25px rgba(0, 0, 0, 0.1); width: 100%; max-width: 700px; padding: 30px; overflow: hidden; }
@@ -43,8 +44,8 @@
         <div class="quiz-header"> <h1 id="main-header">लोड हो रहा है...</h1> </div>
         <div id="error-screen" class="hidden"> <h1>त्रुटि: क्विज़ नहीं मिला!</h1> <p>कृपया होम पेज पर वापस जाकर पुनः प्रयास करें।</p> <a href="index.html" class="home-link">होम पेज पर जाएं</a> </div>
         <div id="start-screen">
-            <h2>क्विज़ में आपका स्वागत है!</h2>
-            <p>शुरू करने के लिए समय चुनें और "स्टार्ट" बटन दबाएं।</p>
+            <h2 id="start-title">क्विज़ में आपका स्वागत है!</h2>
+            <p id="start-text">इस अध्याय में <strong id="question-count-info"></strong> प्रश्न हैं। शुरू करने के लिए समय चुनें और "स्टार्ट" बटन दबाएं।</p>
             <div class="timer-settings">
                 <label for="time-select">समय सीमा चुनें:</label>
                 <select id="time-select" style="padding: 5px; border-radius: 5px;">
@@ -75,10 +76,15 @@
             <button id="back-to-results-btn" class="btn" style="margin-top: 20px; background-color: #17a2b8; color: white;">परिणाम पर वापस जाएं</button>
         </div>
     </div>
+    
     <script src="questions.js"></script>
     <script>
         // सभी एलिमेंट्स को पहले से चुन लें
         const mainHeader = document.getElementById('main-header');
+        const startTitle = document.getElementById('start-title');
+        const startText = document.getElementById('start-text');
+        const questionCountInfo = document.getElementById('question-count-info');
+        // ... (बाकी सभी एलिमेंट्स पहले जैसे ही हैं)
         const errorScreen = document.getElementById('error-screen');
         const startScreen = document.getElementById('start-screen');
         const quizScreen = document.getElementById('quiz-screen');
@@ -110,28 +116,52 @@
 
         let quizData, chapterTitle, currentQuestionIndex, timer, selectedTime, userAnswers, incorrectAnswerIndices, reviewIndex;
 
+        // Function to shuffle an array (Fisher-Yates Shuffle)
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
         // क्विज़ शुरू करें
         document.addEventListener('DOMContentLoaded', () => {
             const urlParams = new URLSearchParams(window.location.search);
             const chapterKey = urlParams.get('chapter');
-            quizData = allQuestions[chapterKey];
+            
+            // raw questions को लोड करें
+            const rawQuestions = allRawQuestions[chapterKey];
             chapterTitle = chapterTitles[chapterKey];
 
-            if (!quizData) {
+            if (!rawQuestions) {
                 startScreen.classList.add('hidden');
                 errorScreen.classList.remove('hidden');
                 mainHeader.innerText = "त्रुटि";
                 return;
             }
+
+            // 20 प्रश्नों का लॉजिक यहाँ लागू करें
+            if (rawQuestions.length > 20) {
+                quizData = shuffleArray([...rawQuestions]).slice(0, 20); // 20 रैंडम प्रश्न चुनें
+            } else {
+                quizData = [...rawQuestions]; // सभी उपलब्ध प्रश्न लें
+            }
+            
             mainHeader.innerText = chapterTitle;
+            startTitle.innerText = `${chapterTitle}`;
+            questionCountInfo.innerText = quizData.length;
         });
         
+        // बाकी के सभी फंक्शन पहले जैसे ही रहेंगे
         function startQuiz() {
             selectedTime = parseInt(timeSelect.value);
             currentQuestionIndex = 0;
             userAnswers = new Array(quizData.length).fill(null);
             incorrectAnswerIndices = [];
             startScreen.classList.add('hidden');
+            resultScreen.classList.add('hidden');
+            reviewScreen.classList.add('hidden');
             quizScreen.classList.remove('hidden');
             loadQuestion();
         }
@@ -294,7 +324,7 @@
         prevBtn.addEventListener('click', showPreviousQuestion);
         skipBtn.addEventListener('click', skipQuestion);
         submitQuizBtn.addEventListener('click', showResults);
-        restartBtn.addEventListener('click', startQuiz);
+        restartBtn.addEventListener('click', startQuiz); // Restart button should call startQuiz
         reviewBtn.addEventListener('click', startReview);
         backToResultsBtn.addEventListener('click', () => {
             reviewScreen.classList.add('hidden');
