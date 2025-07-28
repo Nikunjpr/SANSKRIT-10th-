@@ -51,7 +51,7 @@
             <div class="quiz-header"><h1 id="parts-chapter-title"></h1></div>
             <p>इस अध्याय के प्रश्नों को भागों में बांटा गया है। प्रैक्टिस करने के लिए कोई एक भाग चुनें।</p>
             <ul id="part-list" class="list-container"></ul>
-            <button class="home-link" onclick="showScreen('home-screen')">सभी अध्याय देखें</button>
+            <button class="home-link" id="back-to-home-btn">सभी अध्याय देखें</button>
         </div>
         
         <!-- Screen 3: Quiz Start Screen -->
@@ -92,7 +92,7 @@
                 <div id="score-summary"> <div id="correct-count"></div> <div id="incorrect-count"></div> <div id="percentage"></div> </div>
                 <button id="review-btn" class="btn hidden" style="background-color: #17a2b8; color: white; margin-top: 15px;">गलत उत्तरों की समीक्षा करें</button>
                 <button id="restart-btn" class="btn" style="background-color: #007bff; color: white; margin-top: 15px;">फिर से प्रयास करें</button>
-                <button class="home-link" onclick="showScreen('home-screen')">होम पेज पर जाएं</button>
+                <button class="home-link" id="home-from-result-btn">होम पेज पर जाएं</button>
              </div>
         </div>
         
@@ -340,6 +340,7 @@ const allRawQuestions = {
 // ===================================================================================
 // QUIZ APPLICATION LOGIC (Don't edit below this line)
 // ===================================================================================
+
 document.addEventListener('DOMContentLoaded', () => {
     // DOM Elements
     const screens = { home: document.getElementById('home-screen'), parts: document.getElementById('parts-screen'), start: document.getElementById('start-screen'), quiz: document.getElementById('quiz-screen'), result: document.getElementById('result-screen'), review: document.getElementById('review-screen') };
@@ -347,6 +348,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const partsChapterTitleEl = document.getElementById('parts-chapter-title');
     const partListEl = document.getElementById('part-list');
     const backToPartsBtn = document.getElementById('back-to-parts-btn');
+    const backToHomeBtn = document.getElementById('back-to-home-btn');
+    const homeFromResultBtn = document.getElementById('home-from-result-btn');
     const startTitle = document.getElementById('start-title');
     const questionCountInfo = document.getElementById('question-count-info');
     const timeSelect = document.getElementById('time-select');
@@ -414,6 +417,12 @@ document.addEventListener('DOMContentLoaded', () => {
         partListEl.innerHTML = '';
         
         const questions = allRawQuestions[chapterKey];
+        if (!questions) {
+            partListEl.innerHTML = "<li><div>इस अध्याय के लिए प्रश्न उपलब्ध नहीं हैं।</div></li>";
+            showScreen('parts');
+            return;
+        }
+        
         const partSize = 15;
         const totalParts = Math.ceil(questions.length / partSize);
 
@@ -506,7 +515,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (optionsContainer.querySelector('.disabled')) return;
         clearInterval(timer);
         userAnswers[currentQuestionIndex] = selectedOption;
-        document.querySelectorAll('.option').forEach(opt => opt.classList.add('disabled'));
+        document.querySelectorAll('#quiz-screen .option').forEach(opt => opt.classList.add('disabled'));
         const correctAnswr = quizData[currentQuestionIndex].answer;
         if (selectedOption === correctAnswr) {
             selectedLi.classList.add('correct');
@@ -514,7 +523,7 @@ document.addEventListener('DOMContentLoaded', () => {
             feedback.style.color = '#28a745';
         } else {
             selectedLi.classList.add('wrong');
-            document.querySelectorAll('.option').forEach(opt => {
+            document.querySelectorAll('#quiz-screen .option').forEach(opt => {
                 if (opt.innerText === correctAnswr) opt.classList.add('correct');
             });
             feedback.innerText = `गलत! सही उत्तर हाइलाइट किया गया है।`;
@@ -525,7 +534,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function showCorrectAnswer() {
         const correctAnswr = quizData[currentQuestionIndex].answer;
-        document.querySelectorAll('.option').forEach(opt => {
+        document.querySelectorAll('#quiz-screen .option').forEach(opt => {
             opt.classList.add('disabled');
             if (opt.innerText === correctAnswr) opt.classList.add('correct');
         });
@@ -620,11 +629,12 @@ document.addEventListener('DOMContentLoaded', () => {
     backToResultsBtn.addEventListener('click', () => showScreen('result'));
     prevReviewBtn.addEventListener('click', () => { if(reviewIndex > 0) { reviewIndex--; loadReviewQuestion(); } });
     nextReviewBtn.addEventListener('click', () => { if(reviewIndex < incorrectAnswerIndices.length - 1) { reviewIndex++; loadReviewQuestion(); } });
+    backToHomeBtn.addEventListener('click', () => renderChapterList());
+    homeFromResultBtn.addEventListener('click', () => renderChapterList());
 
     // --- Initial Load ---
     renderChapterList();
 });
 </script>
-
 </body>
 </html>
