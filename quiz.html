@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>संस्कृत क्विज़</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+        body { font-family: 'Poppins', sans-serif; background-color: #f0f2f5; color: #333; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 15px; }
+        .quiz-container { background: #ffffff; border-radius: 15px; box-shadow: 0 6px 25px rgba(0, 0, 0, 0.1); width: 100%; max-width: 700px; padding: 30px; overflow: hidden; }
+        .quiz-header h1 { font-size: 26px; margin: 0 0 20px 0; text-align: center; color: #0056b3; font-weight: 700; }
+        #question-text { font-size: 19px; font-weight: 600; margin-bottom: 25px; }
+        .options-container { list-style: none; padding: 0; margin: 0; }
+        .option { background-color: #f8f9fa; border: 2px solid #dee2e6; border-radius: 10px; padding: 15px; margin-bottom: 12px; cursor: pointer; transition: all 0.2s ease-in-out; position: relative; }
+        .option:hover:not(.disabled) { background-color: #e9ecef; border-color: #007bff; }
+        .option.correct { background-color: #d4edda !important; border-color: #28a745 !important; color: #155724; }
+        .option.wrong { background-color: #f8d7da !important; border-color: #dc3545 !important; color: #721c24; }
+        .option.disabled { cursor: not-allowed; }
+        .footer-nav { display: flex; justify-content: space-between; align-items: center; margin-top: 25px; }
+        .btn { padding: 12px 25px; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .btn:disabled { background-color: #ccc; cursor: not-allowed; }
+        #feedback { margin-top: 20px; font-size: 18px; font-weight: bold; text-align: center; min-height: 25px; }
+        .timer-settings-container { display: flex; justify-content: space-between; align-items: center; padding: 10px; background-color: #e9ecef; border-radius: 8px; margin-bottom: 20px; }
+        #timer { font-size: 22px; font-weight: bold; color: #dc3545; }
+        .hidden { display: none; }
+        #star-rating { font-size: 40px; color: #ffc107; margin: 15px 0; }
+        .star.empty { color: #e0e0e0; }
+        #score-summary { display: flex; justify-content: space-around; margin: 25px 0; font-size: 18px; flex-wrap: wrap; gap: 10px;}
+        #score-summary div { padding: 10px 20px; border-radius: 10px; }
+        #correct-count { background-color: #d4edda; }
+        #incorrect-count { background-color: #f8d7da; }
+        #percentage { background-color: #cce5ff; }
+        .home-link { display: inline-block; margin-top: 20px; text-decoration: none; background-color: #6c757d; color: white; padding: 10px 20px; border-radius: 8px; cursor: pointer;}
+    </style>
+</head>
+<body>
+    <div class="quiz-container">
+        <div class="quiz-header"> <h1 id="main-header">लोड हो रहा है...</h1> </div>
+        <div id="error-screen" class="hidden"> <h1>त्रुटि: क्विज़ नहीं मिला!</h1> <p>कृपया होम पेज पर वापस जाकर पुनः प्रयास करें।</p> <a href="index.html" class="home-link">होम पेज पर जाएं</a> </div>
+        <div id="start-screen">
+            <h2 id="start-title">क्विज़ में आपका स्वागत है!</h2>
+            <p id="start-text">इस भाग में <strong id="question-count-info"></strong> प्रश्न हैं। शुरू करने के लिए विकल्प चुनें।</p>
+            <div class="timer-settings" style="margin-top: 20px;">
+                <label for="time-select">समय सीमा चुनें:</label>
+                <select id="time-select" style="padding: 5px; border-radius: 5px;">
+                    <option value="15">15 सेकंड</option><option value="20" selected>20 सेकंड</option><option value="25">25 सेकंड</option><option value="30">30 सेकंड</option><option value="0">कोई समय सीमा नहीं</option>
+                </select>
+            </div>
+            <div class="shuffle-option" style="margin-top: 15px; display: flex; align-items: center; justify-content: center;">
+                <input type="checkbox" id="shuffle-toggle" style="width: 18px; height: 18px; margin-right: 8px; cursor: pointer;">
+                <label for="shuffle-toggle" style="cursor: pointer;">प्रश्नों का क्रम बदलें (Shuffle)</label>
+            </div>
+            <button id="start-btn" class="btn" style="background-color: #28a745; color: white; margin-top: 20px;">स्टार्ट क्विज़</button>
+            <a class="home-link" id="back-to-parts-link">वापस जाएं</a>
+        </div>
+        <div id="quiz-screen" class="hidden">
+             <div class="quiz-header"><h1 id="quiz-header-title"></h1></div>
+            <div class="timer-settings-container"> <div>प्रश्न: <span id="question-counter"></span></div> <div id="timer">00:00</div> </div>
+            <div id="question-container"> <p id="question-text"></p> <ul class="options-container" id="options-container"></ul> </div>
+            <div id="feedback"></div>
+            <div class="footer-nav"> <button id="prev-btn" class="btn">पिछला</button> <button id="skip-btn" class="btn">स्किप</button> <button id="submit-quiz-btn" class="btn">क्विज़ सबमिट करें</button> </div>
+        </div>
+        <div id="result-screen" class="hidden">
+            <div class="quiz-header"><h1>क्विज़ समाप्त!</h1></div>
+             <div style="text-align: center;">
+                <div id="star-rating"></div>
+                <p id="result-summary" style="font-size: 22px; font-weight: 600;"></p>
+                <div id="score-summary"> <div id="correct-count"></div> <div id="incorrect-count"></div> <div id="percentage"></div> </div>
+                <button id="review-btn" class="btn hidden" style="background-color: #17a2b8; color: white; margin-top: 15px;">गलत उत्तरों की समीक्षा करें</button>
+                <button id="restart-btn" class="btn" style="background-color: #007bff; color: white; margin-top: 15px;">फिर से प्रयास करें</button>
+                <a href="index.html" class="home-link">होम पेज पर जाएं</a>
+             </div>
+        </div>
+        <div id="review-screen" class="hidden">
+            <div class="quiz-header"><h1 id="review-header-title">गलत उत्तरों की समीक्षा</h1></div>
+            <div id="review-question-container"> <p id="review-question-text"></p> <ul class="options-container" id="review-options-container"></ul> </div>
+            <div class="footer-nav"> <button id="prev-review-btn" class="btn">पिछला</button> <span id="review-counter" style="font-weight: bold;"></span> <button id="next-review-btn" class="btn">अगला</button> </div>
+            <div style="text-align:center;"><button id="back-to-results-btn" class="btn" style="margin-top: 20px; background-color: #17a2b8; color: white;">परिणाम पर वापस जाएं</button></div>
+        </div>
+    </div>
+    
+    <script src="questions.js"></script>
+    <script>
+        // DOM Elements
+        const mainHeader = document.getElementById('main-header');
+        const startScreen = document.getElementById('start-screen');
+        const quizScreen = document.getElementById('quiz-screen');
+        const resultScreen = document.getElementById('result-screen');
+        const reviewScreen = document.getElementById('review-screen');
+        const errorScreen = document.getElementById('error-screen');
+        const startTitle = document.getElementById('start-title');
+        const questionCountInfo = document.getElementById('question-count-info');
+        const timeSelect = document.getElementById('time-select');
+        const shuffleToggle = document.getElementById('shuffle-toggle');
+        const startBtn = document.getElementById('start-btn');
+        const backToPartsLink = document.getElementById('back-to-parts-link');
+        const quizHeaderTitle = document.getElementById('quiz-header-title');
+        const questionCounter = document.getElementById('question-counter');
+        const timerDisplay = document.getElementById('timer');
+        const questionText = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const feedback = document.getElementById('feedback');
+        const prevBtn = document.getElementById('prev-btn');
+        const skipBtn = document.getElementById('skip-btn');
+        const submitQuizBtn = document.getElementById('submit-quiz-btn');
+        const starRating = document.getElementById('star-rating');
+        const resultSummary = document.getElementById('result-summary');
+        const correctCountEl = document.getElementById('correct-count');
+        const incorrectCountEl = document.getElementById('incorrect-count');
+        const percentageEl = document.getElementById('percentage');
+        const reviewBtn = document.getElementById('review-btn');
+        const restartBtn = document.getElementById('restart-btn');
+        const reviewHeaderTitle = document.getElementById('review-header-title');
+        const reviewQuestionText = document.getElementById('review-question-text');
+        const reviewOptionsContainer = document.getElementById('review-options-container');
+        const reviewCounter = document.getElementById('review-counter');
+        const prevReviewBtn = document.getElementById('prev-review-btn');
+        const nextReviewBtn = document.getElementById('next-review-btn');
+        const backToResultsBtn = document.getElementById('back-to-results-btn');
+
+        // State Variables
+        let partQuestions, quizData, currentQuestionIndex, timer, userAnswers, incorrectAnswerIndices, reviewIndex;
+
+        // Function to shuffle an array
+        function shuffleArray(array) { for (let i = array.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [array[i], array[j]] = [array[j], array[i]]; } return array; }
+        
+        // --- QUIZ INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const chapterKey = urlParams.get('chapter');
+            const partIndex = parseInt(urlParams.get('part'));
+
+            const rawQuestions = allRawQuestions[chapterKey];
+            const chapterTitle = chapterTitles[chapterKey];
+
+            if (!rawQuestions || isNaN(partIndex)) {
+                startScreen.classList.add('hidden');
+                errorScreen.classList.remove('hidden');
+                mainHeader.innerText = "त्रुटि";
+                return;
+            }
+
+            const partSize = 15;
+            const startIndex = partIndex * partSize;
+            const endIndex = startIndex + partSize;
+            partQuestions = rawQuestions.slice(startIndex, endIndex);
+            
+            mainHeader.innerText = `${chapterTitle} - भाग ${partIndex + 1}`;
+            startTitle.innerText = `क्विज़ - भाग ${partIndex + 1}`;
+            questionCountInfo.innerText = partQuestions.length;
+            backToPartsLink.href = `parts.html?chapter=${chapterKey}`;
+
+            startBtn.addEventListener('click', startQuiz);
+        });
+
+        // बाकी सभी फंक्शन पहले जैसे ही काम करेंगे
+        function startQuiz() {
+            if (shuffleToggle.checked) { quizData = shuffleArray([...partQuestions]); } else { quizData = [...partQuestions]; }
+            const selectedTime = parseInt(timeSelect.value);
+            currentQuestionIndex = 0;
+            userAnswers = new Array(quizData.length).fill(null);
+            incorrectAnswerIndices = [];
+            quizHeaderTitle.textContent = mainHeader.textContent;
+            startScreen.classList.add('hidden');
+            quizScreen.classList.remove('hidden');
+            resultScreen.classList.add('hidden');
+            reviewScreen.classList.add('hidden');
+            loadQuestion(selectedTime);
+        }
+
+        function loadQuestion(timeLimit) {
+            clearStatus();
+            const currentQuestion = quizData[currentQuestionIndex];
+            questionCounter.innerText = `${currentQuestionIndex + 1} / ${quizData.length}`;
+            questionText.innerText = currentQuestion.question;
+            optionsContainer.innerHTML = '';
+            currentQuestion.options.forEach(optionText => {
+                const li = document.createElement('li');
+                li.innerText = optionText;
+                li.className = 'option';
+                li.onclick = () => selectOption(li, optionText);
+                optionsContainer.appendChild(li);
+            });
+            prevBtn.disabled = currentQuestionIndex === 0;
+            startTimer(timeLimit);
+        }
+
+        function startTimer(timeLimit) {
+            clearInterval(timer);
+            const timerContainer = document.querySelector('.timer-settings-container');
+            if (timeLimit <= 0) { timerContainer.classList.add('hidden'); return; }
+            timerContainer.classList.remove('hidden');
+            let timeLeft = timeLimit;
+            timerDisplay.innerText = `00:${timeLeft < 10 ? '0' : ''}${timeLeft}`;
+            timer = setInterval(() => {
+                timeLeft--;
+                timerDisplay.innerText = `00:${timeLeft < 10 ? '0' : ''}${timeLeft}`;
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    feedback.innerText = "समय समाप्त!";
+                    feedback.style.color = '#dc3545';
+                    showCorrectAnswer();
+                    setTimeout(goToNextQuestion, 2000);
+                }
+            }, 1000);
+        }
+
+        function selectOption(selectedLi, selectedOption) {
+            if (optionsContainer.querySelector('.disabled')) return;
+            clearInterval(timer);
+            userAnswers[currentQuestionIndex] = selectedOption;
+            document.querySelectorAll('#quiz-screen .option').forEach(opt => opt.classList.add('disabled'));
+            const correctAnswr = quizData[currentQuestionIndex].answer;
+            if (selectedOption === correctAnswr) {
+                selectedLi.classList.add('correct');
+                feedback.innerText = "सही जवाब!";
+                feedback.style.color = '#28a745';
+            } else {
+                selectedLi.classList.add('wrong');
+                document.querySelectorAll('#quiz-screen .option').forEach(opt => { if (opt.innerText === correctAnswr) opt.classList.add('correct'); });
+                feedback.innerText = `गलत! सही उत्तर हाइलाइट किया गया है।`;
+                feedback.style.color = '#dc3545';
+            }
+            setTimeout(goToNextQuestion, 2000);
+        }
+
+        function showCorrectAnswer() {
+            const correctAnswr = quizData[currentQuestionIndex].answer;
+            document.querySelectorAll('#quiz-screen .option').forEach(opt => { opt.classList.add('disabled'); if (opt.innerText === correctAnswr) opt.classList.add('correct'); });
+        }
+
+        function goToNextQuestion() {
+            if (currentQuestionIndex < quizData.length - 1) { currentQuestionIndex++; loadQuestion(parseInt(timeSelect.value)); } else { showResults(); }
+        }
+
+        function showPreviousQuestion() {
+            if (currentQuestionIndex > 0) { clearInterval(timer); currentQuestionIndex--; loadQuestion(parseInt(timeSelect.value)); }
+        }
+
+        function clearStatus() { feedback.innerText = ''; }
+
+        function showResults() {
+            clearInterval(timer);
+            let correctAnswers = 0;
+            incorrectAnswerIndices = [];
+            userAnswers.forEach((answer, index) => { if (answer === quizData[index].answer) correctAnswers++; else if (answer !== null) incorrectAnswerIndices.push(index); });
+            const incorrectAnswersCount = userAnswers.filter(a => a !== null).length - correctAnswers;
+            const percentage = quizData.length > 0 ? Math.round((correctAnswers / quizData.length) * 100) : 0;
+            resultSummary.innerText = 'आपका प्रदर्शन';
+            correctCountEl.innerHTML = `<strong>सही:</strong> ${correctAnswers}`;
+            incorrectCountEl.innerHTML = `<strong>गलत:</strong> ${incorrectAnswersCount}`;
+            percentageEl.innerHTML = `<strong>अंक:</strong> ${percentage}%`;
+            displayStars(percentage);
+            if (incorrectAnswerIndices.length > 0) reviewBtn.classList.remove('hidden'); else reviewBtn.classList.add('hidden');
+            quizScreen.classList.add('hidden');
+            resultScreen.classList.remove('hidden');
+        }
+
+        function displayStars(percentage) {
+            let starHTML = '';
+            let filledStars = 0;
+            if (percentage >= 90) filledStars = 5;
+            else if (percentage >= 70) filledStars = 4;
+            else if (percentage >= 50) filledStars = 3;
+            else if (percentage >= 30) filledStars = 2;
+            else if (percentage > 0) filledStars = 1;
+            for(let i=0; i<5; i++) starHTML += `<span class="star ${i < filledStars ? '' : 'empty'}">★</span>`;
+            starRating.innerHTML = starHTML;
+        }
+
+        function startReview() {
+            reviewIndex = 0;
+            reviewHeaderTitle.textContent = `${chapterTitles[new URLSearchParams(window.location.search).get('chapter')]} - गलत उत्तर`;
+            resultScreen.classList.add('hidden');
+            reviewScreen.classList.remove('hidden');
+            loadReviewQuestion();
+        }
+        
+        function loadReviewQuestion() {
+            const questionDataIndex = incorrectAnswerIndices[reviewIndex];
+            const question = quizData[questionDataIndex];
+            const userAnswer = userAnswers[questionDataIndex];
+            reviewQuestionText.innerText = `प्रश्न: ${question.question}`;
+            reviewOptionsContainer.innerHTML = '';
+            question.options.forEach(option => {
+                const li = document.createElement('li');
+                li.innerText = option;
+                li.className = 'option disabled';
+                if (option === question.answer) li.classList.add('correct');
+                else if (option === userAnswer) li.classList.add('wrong');
+                reviewOptionsContainer.appendChild(li);
+            });
+            reviewCounter.innerText = `${reviewIndex + 1} / ${incorrectAnswerIndices.length}`;
+            prevReviewBtn.disabled = reviewIndex === 0;
+            nextReviewBtn.disabled = reviewIndex === incorrectAnswerIndices.length - 1;
+        }
+
+        // --- Event Listeners ---
+        prevBtn.addEventListener('click', showPreviousQuestion);
+        skipBtn.addEventListener('click', () => { clearInterval(timer); goToNextQuestion(); });
+        submitQuizBtn.addEventListener('click', showResults);
+        restartBtn.addEventListener('click', startQuiz);
+        reviewBtn.addEventListener('click', startReview);
+        backToResultsBtn.addEventListener('click', () => { reviewScreen.classList.add('hidden'); resultScreen.classList.remove('hidden'); });
+        prevReviewBtn.addEventListener('click', () => { if(reviewIndex > 0) { reviewIndex--; loadReviewQuestion(); } });
+        nextReviewBtn.addEventListener('click', () => { if(reviewIndex < incorrectAnswerIndices.length - 1) { reviewIndex++; loadReviewQuestion(); } });
+    </script>
+</body>
+</html>

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>क्विज़ के भाग चुनें</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+        body { font-family: 'Poppins', sans-serif; background-color: #f0f2f5; color: #333; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 15px;}
+        .container { background: #ffffff; border-radius: 15px; box-shadow: 0 6px 25px rgba(0, 0, 0, 0.1); width: 90%; max-width: 800px; padding: 30px; text-align: center; }
+        h1 { color: #0056b3; margin-bottom: 25px; }
+        .list-container { list-style: none; padding: 0; text-align: left; max-height: 60vh; overflow-y: auto;}
+        .list-item { background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 10px; margin-bottom: 12px; transition: all 0.2s ease-in-out; }
+        .list-item:hover { transform: translateY(-3px); box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08); }
+        .list-item a { display: block; padding: 18px 25px; text-decoration: none; color: #212529; font-size: 18px; font-weight: 600; }
+        .home-link { display: inline-block; margin-top: 20px; text-decoration: none; background-color: #6c757d; color: white; padding: 10px 20px; border-radius: 8px; cursor: pointer;}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 id="chapter-title">लोड हो रहा है...</h1>
+        <p>इस अध्याय के प्रश्नों को भागों में बांटा गया है। प्रैक्टिस करने के लिए कोई एक भाग चुनें।</p>
+        <ul id="part-list" class="list-container">
+            <!-- क्विज़ के भाग यहाँ दिखाए जाएंगे -->
+        </ul>
+        <a href="index.html" class="home-link">सभी अध्याय देखें</a>
+    </div>
+
+    <script src="questions.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const chapterKey = urlParams.get('chapter');
+            
+            const chapterTitleEl = document.getElementById('chapter-title');
+            const partListEl = document.getElementById('part-list');
+
+            if (!chapterKey || !allRawQuestions[chapterKey]) {
+                chapterTitleEl.textContent = 'त्रुटि: अध्याय नहीं मिला!';
+                return;
+            }
+
+            chapterTitleEl.textContent = chapterTitles[chapterKey];
+            const questions = allRawQuestions[chapterKey];
+            const partSize = 15;
+            const totalParts = Math.ceil(questions.length / partSize);
+
+            for (let i = 0; i < totalParts; i++) {
+                const startNum = i * partSize + 1;
+                const endNum = Math.min((i + 1) * partSize, questions.length);
+
+                const listItem = document.createElement('li');
+                listItem.className = 'list-item';
+                const link = document.createElement('a');
+                link.href = `quiz.html?chapter=${chapterKey}&part=${i}`;
+                link.textContent = `भाग ${i + 1} (प्रश्न ${startNum} - ${endNum})`;
+                
+                listItem.appendChild(link);
+                partListEl.appendChild(listItem);
+            }
+        });
+    </script>
+</body>
+</html>
